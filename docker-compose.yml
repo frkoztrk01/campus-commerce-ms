@@ -121,6 +121,21 @@ services:
       order-service:
         condition: service_started
 
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    networks:
+      - internal_net
+    depends_on:
+      dispatcher:
+        condition: service_started
+
 networks:
   internal_net:
     driver: bridge
