@@ -106,3 +106,28 @@ k6 run load-tests/smoke.js
 
 `load-tests/smoke.js` içindeki `stages` ile 50 / 100 / 200 / 500 senaryolarını ayarlayıp tekrarlayabilirsiniz.
 
+## Geliştirme
+
+### Dispatcher testleri
+
+```bash
+cd dispatcher && npm install && npm test && npm run build
+```
+
+### Kök npm scriptleri
+
+```bash
+npm run compose:up
+npm run load:k6
+```
+
+Locust arayüzü: stack ayaktayken **http://localhost:8089** (ayrıca `npm run load:locust` ile yerel Locust için komut örneği).
+
+## Richardson olgunluk (RMM)
+
+REST kaynakları URI ile (`/api/v1/...`), uygun HTTP metotları ve durum kodları ile sunulur; tek bir POST ile RPC tarzı silme örneklenmez.
+
+## Sınırlılıklar ve geliştirme fikirleri
+
+- Üretim için güçlü kimlik doğrulama, TLS, rate limiting ve sırların vault ile yönetimi önerilir.
+- Grafana’da kalıcı dashboard JSON’ları eklenebilir; şu an Prometheus + Explore yeterli minimum görünürlüğü sağlar.
