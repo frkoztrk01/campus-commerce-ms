@@ -136,6 +136,21 @@ services:
       dispatcher:
         condition: service_started
 
+  grafana:
+    image: grafana/grafana:11.3.0
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_DEFAULT_THEME: dark
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - internal_net
+    depends_on:
+      - prometheus
+
 networks:
   internal_net:
     driver: bridge
