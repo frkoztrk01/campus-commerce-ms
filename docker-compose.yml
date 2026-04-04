@@ -151,6 +151,23 @@ services:
     depends_on:
       - prometheus
 
+  locust:
+    image: locustio/locust:2.32.2
+    ports:
+      - "8089:8089"
+    volumes:
+      - ./load-tests:/mnt/locust:ro
+    command:
+      - -f
+      - /mnt/locust/locustfile.py
+      - --host
+      - http://dispatcher:3000
+    networks:
+      - internal_net
+    depends_on:
+      dispatcher:
+        condition: service_started
+
 networks:
   internal_net:
     driver: bridge
