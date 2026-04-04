@@ -7,6 +7,7 @@ import { AccessTokenModel } from './infrastructure/persistence/accessToken.model
 import { MongoAccessRepository } from './infrastructure/persistence/MongoAccessRepository';
 import { createApp } from './app';
 import { loadServiceBasesFromEnv } from './config/loadServiceBases';
+import { TrafficLogBuffer } from './infrastructure/observability/TrafficLogBuffer';
 
 export async function seedDefaultAccessToken(seedToken: string, userId: string): Promise<void> {
   await AccessTokenModel.updateOne(
@@ -31,7 +32,13 @@ export function buildProductionOrchestrator(env: NodeJS.ProcessEnv): GatewayProx
 
 export function startHttpServer(port: number, env: NodeJS.ProcessEnv): void {
   const orchestrator = buildProductionOrchestrator(env);
-  const app = createApp({ orchestrator });
+  const trafficLogBuffer = new TrafficLogBuffer(500);
+  const adminLogToken = env.ADMIN_LOG_TOKEN ?? 'dev-admin-token';
+  const app = createApp({
+    orchestrator,
+    trafficLogBuffer,
+    adminLogToken,
+  });
   app.listen(port, () => {
     console.log(`dispatcher listening on ${port}`);
   });
