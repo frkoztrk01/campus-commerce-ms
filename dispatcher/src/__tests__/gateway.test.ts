@@ -33,7 +33,10 @@ function buildTestApp(httpClient: IHttpClient, accessRepository: IAccessReposito
     accessRepository,
     httpClient,
   );
-  return createApp({ orchestrator });
+  return createApp({
+    orchestrator,
+    adminLogToken: null,
+  });
 }
 
 describe('Dispatcher gateway', () => {
