@@ -71,3 +71,38 @@ docker compose up --build
 - HTML: `GET http://localhost:3000/gateway/admin/logs-ui?token=<token>`  
 - Varsayılan token (geliştirme): `dev-admin-token` — üretimde `ADMIN_LOG_TOKEN` ortam değişkeni ile değiştirin.
 
+## Yük testi
+
+PDF; **JMeter, Locust veya k6** kabul ediyor. En rahat kullanım: **Locust Web UI** (kullanıcı sayısını ve süreyi tarayıcıdan seçersiniz).
+
+### Locust (Web arayüzü — önerilen)
+
+Stack’i ayağa kaldır (`docker compose up --build`). **Locust** servisi ile birlikte gelir; tarayıcıda aç:
+
+**http://localhost:8089**
+
+1. **Start** öncesi: **Number of users** (ör. 50, 100, 200, 500) ve **Spawn rate** (saniyede kaç kullanıcı ekleneceği) girin.  
+2. **Host** alanı Docker ile otomatik `http://dispatcher:3000` olur (Compose içinden).  
+3. **Start swarming** → grafik ve tablolardan ortalama süre, RPS, hata oranını alın; rapora tablo + ekran görüntüsü koyun.
+
+Yerel Python ile (Docker’sız Locust çalıştırmak istersen):
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r load-tests/requirements-locust.txt
+locust -f load-tests/locustfile.py --host http://localhost:3000
+```
+
+Sonra yine **http://localhost:8089** adresine gidin.
+
+### k6 (komut satırı)
+
+[k6](https://k6.io/) kurulu iken (`brew install k6`):
+
+```bash
+k6 run load-tests/smoke.js
+```
+
+`load-tests/smoke.js` içindeki `stages` ile 50 / 100 / 200 / 500 senaryolarını ayarlayıp tekrarlayabilirsiniz.
+
