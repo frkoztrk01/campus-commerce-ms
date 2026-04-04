@@ -1,0 +1,10 @@
+{
+  "name": "campus-commerce-ms",
+  "private": true,
+  "scripts": {
+    "compose:up": "docker compose up --build",
+    "compose:down": "docker compose down",
+    "load:k6": "k6 run load-tests/smoke.js",
+    "load:locust": "locust -f load-tests/locustfile.py --host http://localhost:3000"
+  }
+}
