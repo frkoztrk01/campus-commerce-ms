@@ -1,0 +1,131 @@
+services:
+  mongo-dispatcher:
+    image: mongo:7
+    volumes:
+      - mongo_dispatcher_data:/data/db
+    networks:
+      - internal_net
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 8
+      start_period: 10s
+
+  mongo-auth:
+    image: mongo:7
+    volumes:
+      - mongo_auth_data:/data/db
+    networks:
+      - internal_net
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 8
+      start_period: 10s
+
+  mongo-product:
+    image: mongo:7
+    volumes:
+      - mongo_product_data:/data/db
+    networks:
+      - internal_net
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 8
+      start_period: 10s
+
+  mongo-order:
+    image: mongo:7
+    volumes:
+      - mongo_order_data:/data/db
+    networks:
+      - internal_net
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 8
+      start_period: 10s
+
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    environment:
+      PORT: 4001
+      MONGODB_URI: mongodb://mongo-auth:27017/auth_db
+    networks:
+      - internal_net
+    depends_on:
+      mongo-auth:
+        condition: service_healthy
+    expose:
+      - "4001"
+
+  product-service:
+    build:
+      context: ./product-service
+      dockerfile: Dockerfile
+    environment:
+      PORT: 4002
+      MONGODB_URI: mongodb://mongo-product:27017/product_db
+    networks:
+      - internal_net
+    depends_on:
+      mongo-product:
+        condition: service_healthy
+    expose:
+      - "4002"
+
+  order-service:
+    build:
+      context: ./order-service
+      dockerfile: Dockerfile
+    environment:
+      PORT: 4003
+      MONGODB_URI: mongodb://mongo-order:27017/order_db
+    networks:
+      - internal_net
+    depends_on:
+      mongo-order:
+        condition: service_healthy
+    expose:
+      - "4003"
+
+  dispatcher:
+    build:
+      context: ./dispatcher
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      MONGODB_URI: mongodb://mongo-dispatcher:27017/dispatcher_db
+      AUTH_SERVICE_URL: http://auth-service:4001
+      PRODUCT_SERVICE_URL: http://product-service:4002
+      ORDER_SERVICE_URL: http://order-service:4003
+    networks:
+      - internal_net
+    depends_on:
+      mongo-dispatcher:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      product-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+
+networks:
+  internal_net:
+    driver: bridge
+
+volumes:
+  mongo_dispatcher_data:
+  mongo_auth_data:
+  mongo_product_data:
+  mongo_order_data:
