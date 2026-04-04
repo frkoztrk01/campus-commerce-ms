@@ -108,6 +108,7 @@ services:
       AUTH_SERVICE_URL: http://auth-service:4001
       PRODUCT_SERVICE_URL: http://product-service:4002
       ORDER_SERVICE_URL: http://order-service:4003
+      ADMIN_LOG_TOKEN: ${ADMIN_LOG_TOKEN:-dev-admin-token}
     networks:
       - internal_net
     depends_on:
