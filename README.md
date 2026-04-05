@@ -172,9 +172,15 @@ Sistemin yoğun talep karşısındaki direncini ölçmek ve eş zamanlı istekle
 
 **Yük Testi Kanıt Görselleri:**
 
-*(Performans metriklerine ait Locust test sonucu ekran görüntüsü aşağıda sunulmuştur.)*
+*(Performans metriklerine ve sistem loglarına ait test sonucu ekran görüntüleri aşağıda sunulmuştur.)*
 
-![Locust Yük Testi Metrikleri](images/locust-test-sonucu.png)
+![API Yetkisiz Erişim (Unauthorized) Testi](images/foto.png)
+
+![Locust Test Metrikleri (İstatistikler)](images/foto1.png)
+
+![Dispatcher Trafik İleri Yönlendirme ve Log Arabirimi](images/foto2.png)
+
+![Locust Anlık Test Eğrileri ve Yük Çizelgesi](images/foto3.png)
 
 ---
 
