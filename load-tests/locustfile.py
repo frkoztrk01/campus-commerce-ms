@@ -4,7 +4,7 @@ Gerçekçi E-Ticaret Akışı: Kayıt Ol -> Giriş Yap -> Ürünleri Gör -> Sip
 """
 
 import random
-from locust import HttpUser, between, task, on_start
+from locust import HttpUser, between, task
 
 class ECommerceUser(HttpUser):
     wait_time = between(1, 5)
