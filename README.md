@@ -41,16 +41,6 @@ Projede dış dünyaya izole, kendi iş mantığına özgü veritabanlarına sah
 
 Sistemin bütüncül ve Dockerize orkestrasyonel yapısı aşağıda modellenmiştir:
 
-```mermaid
-config
-{
-  "theme": "base",
-  "themeVariables": {
-    "primaryColor": "#e8f4f8",
-    "edgeLabelBackground":"#ffffff"
-  }
-}
-```
 
 ```mermaid
 graph TD
