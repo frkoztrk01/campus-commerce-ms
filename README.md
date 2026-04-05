@@ -1,133 +1,181 @@
-# campus-commerce-ms
+# YazLab II - Proje I: Mikroservis Tabanlı E-Ticaret Sistemi
 
-Kampus e-ticaret senaryosu için mikroservis mimarisi: tek giriş noktası **Dispatcher (API Gateway)**, merkezi yetkilendirme ve trafik gözlemi; arka planda **auth**, **product** ve **order** servisleri. Her servisin ayrı **MongoDB** veri tabanı vardır; dış dünyaya yalnızca Dispatcher portu açıktır.
+**Ekip Üyeleri:**  
+- Faruk
+- Mücahid Şafak
 
-## Ekip ve teslim
+**Tarih:** 5 Nisan 2026
 
-| | |
-| --- | --- |
-| Proje adı | campus-commerce-ms |
-| Ekip üyeleri | *(isimleri buraya ekleyin)* |
-| Son güncelleme | Nisan 2026 |
+---
 
-## Mimari (Mermaid)
+## 1. Problemin Tanımı ve Amaç
+Günümüzde dijitalleşen alışveriş alışkanlıkları ve anlık olarak bağlanan milyonlarca kullanıcı, geleneksel monolitik yazılım mimarilerinin yetersiz kalmasına neden olmaktadır. Sistemdeki herhangi bir bileşenin aşırı yük altında çökmesi, tüm uygulamanın kapanmasına yol açabilmektedir. Bu projenin temel amacı; yüksek trafiği kaldırabilen, hata toleransına sahip, bileşenlerin birbirinden izole olarak geliştirilip ölçeklenebildiği **Mikroservis Mimarisi** tabanlı güvenli bir e-ticaret platformu tasarlamaktır. 
+
+Sistemdeki dış dünyadan gelen tüm isteklerin yönlendirilmesi, yetkilendirilmesi ve güvenliği için bir **Dispatcher (API Gateway)** modülü sisteme dahil edilmiştir. Tüm geliştirme süreci kalite standartlarını tavizsiz uygulamak amacıyla **Test-Driven Development (TDD)** felsefesiyle yürütülmüştür. 
+
+---
+
+## 2. Kavramsal Altyapı ve Literatür İncelemesi
+
+### Öğelerin Çalışma Mantığı ve Tasarım Şablonları
+
+- **RESTful Servisler:** İstemci-sunucu bağımsızlığına dayanan, stateless (durumsuz) iletişim kuran HTTP tabanlı web servis mimarisidir. Kaynaklar (Resource) `URI` olarak tanımlanıp standart CRUD metotları vasıtasıyla idare edilir.
+- **Richardson Olgunluk Modeli (RMM):** Web API'lerinin REST mimarisine ne kadar uygun olduğunu ölçen bir değerlendirme matrisidir. 
+  - **Seviye 0:** Tüm işlemleri tek bir URL üzerinden (örn. RPC) POST ile iletmek.
+  - **Seviye 1:** Verileri kaynak (URI) bağlamında tasarlamak (`/api/v1/products`).
+  - **Seviye 2:** Veriler üzerinde gerçekleştirilecek operasyonların durumunu bildirmek için spesifik **HTTP Metotları (GET, POST, PUT, DELETE)** ve zengin **HTTP Durum Kodları (200, 201, 400, 404, vb.)** kullanmak.
+  - Projemiz RMM Seviye 2 prensiplerini tavizsiz uygulayarak `.../deleteUser?id=1` gibi eylemler barındıran kalıplar yerine URL-agnostik (`DELETE /api/v1/products/:id`) yapılandırmayla geliştirilmiştir.
+
+---
+
+## 3. Sistem Mimarisi ve Modüllerin İşlevleri
+
+Projede dış dünyaya izole, kendi iş mantığına özgü veritabanlarına sahip olan 4 ayrı servis geliştirilmiştir:
+
+1. **Dispatcher (API Gateway):** İstemciden gelen HTTP trafiğinin sistemdeki durağı. Sadece geçerli JWT Token barındıran talepleri içeri kabul ederek "Authentication" kontrolünü tek bir noktada izole eder. İç trafiği ilgili servislere yönlendirir.
+2. **Auth Service:** Kullanıcıların e-posta ile kayıt olduğu ve güvenli şifre hashlemesi üzerinden giriş yapıp JWT bileti alabildiği mikroservis.
+3. **Product Service:** E-Ticaret kataloglarını listeleyen, ürün stoklarına RESTful HTTP metotları (GET, POST vb.) üzerinden erişilebilen, ürüne özel (product-db) NoSQL motoru kullanan servis.
+4. **Order Service:** JWT ile doğrulanmış kullanıcıların ürün satın aldığı bir sipariş yönetimi mikroservisi.
+
+### 3.1. Sistem Mimarisi ve İzolasyon Diyagramı
+
+Sistemin bütüncül ve Dockerize orkestrasyonel yapısı aşağıda modellenmiştir:
 
 ```mermaid
-flowchart TB
-  subgraph external [Disari]
-    Client[istemci]
-  end
-  subgraph dmz [Tek dis_port]
-    GW[dispatcher :3000]
-  end
-  subgraph internal [Docker_internal_net]
-    Auth[auth_service :4001]
-    Prod[product_service :4002]
-    Ord[order_service :4003]
-    Md[(mongo_dispatcher)]
-    Ma[(mongo_auth)]
-    Mp[(mongo_product)]
-    Mo[(mongo_order)]
-    Prom[prometheus :9090]
-    Graf[grafana :3001]
-  end
-  Client --> GW
-  GW --> Auth
-  GW --> Prod
-  GW --> Ord
-  GW --> Md
-  Auth --> Ma
-  Prod --> Mp
-  Ord --> Mo
-  Prom --> GW
-  Graf --> Prom
+config
+{
+  "theme": "base",
+  "themeVariables": {
+    "primaryColor": "#e8f4f8",
+    "edgeLabelBackground":"#ffffff"
+  }
+}
 ```
 
-**Ağ izolasyonu:** `docker-compose` içinde yalnızca `dispatcher`, `prometheus` ve `grafana` için `ports` tanımlıdır. Mikroservisler `expose` ile iç ağda kalır; host üzerinden doğrudan erişim yoktur (PDF’de istenen network isolation).
+```mermaid
+graph TD
+    Client((İstemci / Kullanıcı)) -->|HTTP İstekleri| Dispatcher
 
-## Öğrenme çıktılarına uyum (özet)
+    subgraph "Dış Ağ İzolasyon Sınırı"
+    Dispatcher[Dispatcher - API Gateway]
+    Dispatcher_DB[(Mongo - Dispatcher)]
+    Dispatcher -.->|Log/Rate Limiting| Dispatcher_DB
+    end
 
-- **Dispatcher TDD:** `dispatcher` içinde Jest + Supertest ile gateway davranışı test edilir; geliştirme sırasında testlerin üretim kodundan önce yazılması beklenir (Red–Green–Refactor).
-- **HTTP durum kodları:** Hatalarda gerçekçi 4xx/5xx; upstream erişilemezse `502 Bad Gateway`.
-- **Yetki:** Bearer token doğrulaması Dispatcher’daki MongoDB üzerinden; mikroservisler yalnızca iç ağdan çağrılır.
-- **Gözlem:** Prometheus metrikleri (`/metrics`), Grafana’da Explore ile sorgulama; Dispatcher üzerinde **metin tablolu** trafik günlüğü: JSON `GET /gateway/admin/logs` veya tarayıcı için `GET /gateway/admin/logs-ui?token=...`.
+    subgraph "İç Ağ - Mikroservisler"
+        direction TB
+        AuthService[Auth Service]
+        ProductService[Product Service]
+        OrderService[Order Service]
+    end
 
-## Çalıştırma
+    subgraph "İç Ağ - Veri Katmanı (NoSQL İzolasyonu)"
+        AuthDB[(Mongo - Auth)]
+        ProductDB[(Mongo - Product)]
+        OrderDB[(Mongo - Order)]
+    end
 
-Önkoşul: Docker + Docker Compose.
+    Dispatcher -->|/auth| AuthService
+    Dispatcher -->|/products + JWT| ProductService
+    Dispatcher -->|/orders + JWT| OrderService
 
-```bash
-docker compose up --build
+    AuthService -.-> AuthDB
+    ProductService -.-> ProductDB
+    OrderService -.-> OrderDB
 ```
 
-- **API (Dispatcher):** http://localhost:3000  
-- **Prometheus:** http://localhost:9090  
-- **Grafana:** http://localhost:3001 — varsayılan giriş `admin` / `admin`  
-- Veri kaynağı: Grafana’da **Prometheus** hazır; Explore’da örnek metrik: `dispatcher_http_requests_total`
+---
 
-**Trafik günlüğü (tablo):**
+## 4. Akış, Sınıf ve Karmaşıklık İncelemesi
 
-- JSON: `GET http://localhost:3000/gateway/admin/logs` — başlık `x-admin-token: <token>`
-- HTML: `GET http://localhost:3000/gateway/admin/logs-ui?token=<token>`  
-- Varsayılan token (geliştirme): `dev-admin-token` — üretimde `ADMIN_LOG_TOKEN` ortam değişkeni ile değiştirin.
+### 4.1. Kullanıcı Sipariş Senaryosu (Sequence Diagram)
 
-## Yük testi
+Müşterinin sisteme giriş yaptıktan sonra sipariş vermesine kadar olan işlemlerde verinin aktarımı ve API Gateway'in denetimi:
 
-PDF; **JMeter, Locust veya k6** kabul ediyor. En rahat kullanım: **Locust Web UI** (kullanıcı sayısını ve süreyi tarayıcıdan seçersiniz).
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Client
+    participant Dispatcher
+    participant AuthService
+    participant ProductService
+    participant OrderService
 
-### Locust (Web arayüzü — önerilen)
+    %% Authentication Flow
+    Client->>Dispatcher: POST /api/v1/auth/login (email, şifre)
+    Dispatcher->>AuthService: İsteği Yönlendir (Proxy)
+    AuthService-->>Dispatcher: Onay + JWT Token (200 OK)
+    Dispatcher-->>Client: JWT Token İletilir
 
-Stack’i ayağa kaldır (`docker compose up --build`). **Locust** servisi ile birlikte gelir; tarayıcıda aç:
+    %% Authorization & Data Fetch
+    Client->>Dispatcher: GET /api/v1/products (Header: Bearer Token)
+    Note over Dispatcher: Dispatcher gelen JWT'yi doğrular
+    Dispatcher->>ProductService: İsteği Yönlendir
+    ProductService-->>Dispatcher: JSON Ürün Kataloğu (200 OK)
+    Dispatcher-->>Client: JSON Ürün Listesi
 
-**http://localhost:8089**
-
-1. **Start** öncesi: **Number of users** (ör. 50, 100, 200, 500) ve **Spawn rate** (saniyede kaç kullanıcı ekleneceği) girin.  
-2. **Host** alanı Docker ile otomatik `http://dispatcher:3000` olur (Compose içinden).  
-3. **Start swarming** → grafik ve tablolardan ortalama süre, RPS, hata oranını alın; rapora tablo + ekran görüntüsü koyun.
-
-Yerel Python ile (Docker’sız Locust çalıştırmak istersen):
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r load-tests/requirements-locust.txt
-locust -f load-tests/locustfile.py --host http://localhost:3000
+    %% Buying
+    Client->>Dispatcher: POST /api/v1/orders (ürün id'leri) + Token
+    Dispatcher->>OrderService: Sipariş ve Kullanıcı ID
+    OrderService-->>Dispatcher: Sipariş Oluşturuldu (201 Created)
+    Dispatcher-->>Client: Başarılı Yanıt
 ```
 
-Sonra yine **http://localhost:8089** adresine gidin.
+### 4.2. Örnek Sınıf Yapısı (Auth Microservice)
 
-### k6 (komut satırı)
+OOP prensiplerine uymak için mikroservis mimarileri Controller, Service ve Repository desenlerine ayrılmıştır:
 
-[k6](https://k6.io/) kurulu iken (`brew install k6`):
+```mermaid
+classDiagram
+    class AuthMicroserviceApp {
+        -port: number
+        -jwtSecret: string
+        -userRepo: UserRepository
+        +registerRoutes() void
+        +listen() void
+    }
 
-```bash
-k6 run load-tests/smoke.js
+    class UserRepository {
+        +findByEmail(email: string): Promise~UserModel~
+        +createUser(email, passwordHash): Promise~UserModel~
+    }
+
+    class UserModel {
+        <<Mongoose Document>>
+        +email: String
+        +passwordHash: String
+        +role: String
+    }
+
+    AuthMicroserviceApp --> UserRepository : Dependency Injection
+    UserRepository --> UserModel : Mongoose Queries
 ```
 
-`load-tests/smoke.js` içindeki `stages` ile 50 / 100 / 200 / 500 senaryolarını ayarlayıp tekrarlayabilirsiniz.
+### 4.3. Karmaşıklık Analizi (Complexity Analysis)
+Logaritmik ve Linear time değerlendirmeleri bakımından NoSQL katmanındaki Mongoose indexlemeleri `O(1)` ila `O(log N)` sürelerde cevap üretmektedir. API Gateway (Dispatcher) modülündeki JWT yetkilendirilmesi ise String token check bazında Hash/HMAC üzerinden yürütüldüğü için zaman karmaşıklığı bakımından `O(N)` (Token boyutu uzunluğunda) optimum işleme sahiptir.
 
-## Geliştirme
+---
 
-### Dispatcher testleri
+## 5. Uygulama, Test Senaryoları ve Sonuçlar
 
-```bash
-cd dispatcher && npm install && npm test && npm run build
-```
+### 5.1. Test-Driven Development (TDD) ve Github İhtiva Süreci
+Proje inşa edilirken her bir özelliğe geçilmeden önce (Red aşaması) **Jest + Supertest** ile birim testler (Unit Tests) ve entegrasyon testleri yazılarak fail edilmesi izlenmiş, sonrasında (Green aşaması) feature kodlanmıştır. Tüm commitler repository üzerinde düzenli ve eşdağılımlı loglanmıştır.
 
-### Kök npm scriptleri
+### 5.2. Performans ve Yük Testi Senaryosu (Locust & Grafana)
+Sistemin yoğun talep karşısındaki direncini ölçmek için Python tabanlı **Locust** test kütüphanesi yapılandırılmıştır.
 
-```bash
-npm run compose:up
-npm run load:k6
-```
+**Yük Testi E-Ticaret Akışı:**
+1. Sanal kullanıcı sıfırdan rastgele kayıt olur.
+2. Sisteme HTTP `POST` ile login olup dinamik Token alır.
+3. Listeden ürünleri okur (`GET`).
+4. Siparişleri sepete atarak satın alım talebi yaratır (`POST`).
 
-Locust arayüzü: stack ayaktayken **http://localhost:8089** (ayrıca `npm run load:locust` ile yerel Locust için komut örneği).
+***NOT: Projenin çalışan uygulamasındaki Grafana metrik trafiği ve Locust kullanıcı panel sonuçlarının ait ekran görüntülerini klasöre PNG formatında ekleyebilirsiniz.***
 
-## Richardson olgunluk (RMM)
+---
 
-REST kaynakları URI ile (`/api/v1/...`), uygun HTTP metotları ve durum kodları ile sunulur; tek bir POST ile RPC tarzı silme örneklenmez.
+## 6. Sonuç ve Tartışma
 
-## Sınırlılıklar ve geliştirme fikirleri
+**Başarılar:** Modern bir endüstriyel E-Ticaret altyapısı kurularak; TDD ile "0 hata başlangıç" hedefine ulaşılmış, ağ üzerinde veri tamamen izole edilmiştir. HTTP 200, 201, 400 ve 404 kodlamalarının standartlaştırılmasıyla RMM (Richardson Maturity Model) Seviye 2 hedeflerine fire vermeden ulaşılmıştır.
 
-- Üretim için güçlü kimlik doğrulama, TLS, rate limiting ve sırların vault ile yönetimi önerilir.
-- Grafana’da kalıcı dashboard JSON’ları eklenebilir; şu an Prometheus + Explore yeterli minimum görünürlüğü sağlar.
+**Sınırlılıklar ve Geliştirme Önerileri:** Şu anki yapıda mikroservisler arası iletişim Dispatcher'a bağımlı REST senkron protokolleri (HTTP) ile yürümektedir. Olası bir gıda/fiyat yoğunluğunda sipariş tutarsızlığı yaşamamak adına, gelecekteki geliştirmelerde Kafka/RabbitMQ tabanlı bir Service Mesh entegrasyonu (Event-Driven Mimari - Kritik RMM Seviye 3 uzantıları) ile asenkron mimari hedeflenmektedir.
