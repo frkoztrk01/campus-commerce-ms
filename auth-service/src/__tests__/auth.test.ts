@@ -2,16 +2,28 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import { AuthMicroserviceApp } from '../AuthMicroserviceApp';
 
-// We mock mongoose connect to avoid actual DB connections during the first Red step
-jest.mock('mongoose', () => {
-  const actualMongoose = jest.requireActual('mongoose');
+// We strictly mock the UserRepository so we don't need a real MongoDB connection
+jest.mock('../infrastructure/database/UserRepository', () => {
   return {
-    ...actualMongoose,
-    connect: jest.fn().mockResolvedValue(true),
-    Schema: actualMongoose.Schema,
-    model: actualMongoose.model,
+    UserRepository: jest.fn().mockImplementation(() => ({
+      findByEmail: jest.fn().mockImplementation(async (email) => {
+        if (email === 'test@example.com') return { _id: 'dummy-id', email, passwordHash: 'hashed', role: 'user' };
+        return null;
+      }),
+      createUser: jest.fn().mockImplementation(async (email, password) => {
+        return { _id: 'dummy-id', email, passwordHash: password, role: 'user' };
+      })
+    }))
   };
 });
+
+// Since bcrypt is used, we should also mock it to avoid relying on actual hashes in tests matching 'securepassword123' to 'hashed'
+jest.mock('bcrypt', () => ({
+  hash: jest.fn().mockResolvedValue('hashed'),
+  compare: jest.fn().mockImplementation(async (pwd, hash) => {
+    return pwd === 'securepassword123';
+  }),
+}));
 
 // Avoid port binding issues in tests
 const app = new AuthMicroserviceApp(0).getExpressApp();
@@ -26,7 +38,7 @@ describe('Auth Service - Registration & Login', () => {
       const res = await request(app)
         .post('/api/v1/auth/register')
         .send({
-          email: 'test@example.com',
+          email: 'new-user@example.com',
           password: 'securepassword123',
         });
       
