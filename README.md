@@ -161,8 +161,8 @@ Logaritmik ve Linear time değerlendirmeleri bakımından NoSQL katmanındaki Mo
 ### 5.1. Test-Driven Development (TDD) ve Github İhtiva Süreci
 Proje inşa edilirken her bir özelliğe geçilmeden önce (Red aşaması) **Jest + Supertest** ile birim testler (Unit Tests) ve entegrasyon testleri yazılarak fail edilmesi izlenmiş, sonrasında (Green aşaması) feature kodlanmıştır. Tüm commitler repository üzerinde düzenli ve eşdağılımlı loglanmıştır.
 
-### 5.2. Performans ve Yük Testi Senaryosu (Locust & Grafana)
-Sistemin yoğun talep karşısındaki direncini ölçmek için Python tabanlı **Locust** test kütüphanesi yapılandırılmıştır.
+### 5.2. Performans ve Yük Testi Senaryosu (Locust)
+Sistemin yoğun talep karşısındaki direncini ölçmek ve eş zamanlı istekleri karşılama başarısını (yanıt süreleri, hata oranları vb.) görselleştirmek için Python tabanlı **Locust** test aracının dâhili grafik izlencesi kullanılmıştır.
 
 **Yük Testi E-Ticaret Akışı:**
 1. Sanal kullanıcı sıfırdan rastgele kayıt olur.
@@ -170,7 +170,7 @@ Sistemin yoğun talep karşısındaki direncini ölçmek için Python tabanlı *
 3. Listeden ürünleri okur (`GET`).
 4. Siparişleri sepete atarak satın alım talebi yaratır (`POST`).
 
-***NOT: Projenin çalışan uygulamasındaki Grafana metrik trafiği ve Locust kullanıcı panel sonuçlarının ait ekran görüntülerini klasöre PNG formatında ekleyebilirsiniz.***
+***NOT: Yük testi senaryolarının (50, 100, 200, 500 eş zamanlı istekte ortalama yanıt süreleri) detaylı performans sonuçlarını içeren Locust grafik test ekran görüntülerini bu kısma veya rapora ekleyebilirsiniz.***
 
 ---
 
