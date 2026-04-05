@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import { OrderMicroserviceApp } from './OrderMicroserviceApp';
 
 const port = Number(process.env.PORT) || 4003;
-const mongoUri = process.env.MONGO_URI || 'mongodb://order-db:27017/order_db';
+const mongoUri = process.env.MONGODB_URI || 'mongodb://mongo-order:27017/order_db';
 
 mongoose.connect(mongoUri)
   .then(() => {
