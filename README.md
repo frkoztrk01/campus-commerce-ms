@@ -178,7 +178,42 @@ Sistemin yoğun talep karşısındaki direncini ölçmek ve eş zamanlı istekle
 
 ---
 
-## 6. Sonuç ve Tartışma
+## 6. Kurulum ve Çalıştırma
+
+Projeyi ayağa kaldırmak için sisteminizde **Docker** ve **Docker Compose** kurulu olmalıdır. Terminal üzerinden proje kök dizininde aşağıdaki komutu çalıştırarak tüm mikroservisleri ve veritabanlarını izole bir ağda başlatabilirsiniz:
+
+```bash
+docker compose up --build -d
+```
+
+Sistem başlatıldıktan sonra araçlara ve servislere şu adreslerden erişebilirsiniz:
+- **API Gateway (Dispatcher):** `http://localhost:3000`
+- **Grafana (Metrik Paneli):** `http://localhost:3001` (Giriş: `admin` / `admin`)
+- **Locust (Yük Testi Arayüzü):** `http://localhost:8089`
+- **Trafik Logları (UI):** `http://localhost:3000/gateway/admin/logs-ui?token=dev-admin-token`
+
+---
+
+## 7. API Uç Noktaları (Endpoints)
+
+Dış dünyadan gelen tüm istekler **Dispatcher** (`http://localhost:3000`) üzerinden yönlendirilir. Yetki gerektiren isteklerde HTTP Header olarak `Authorization: Bearer <JWT_TOKEN>` iletilmelidir.
+
+**Kullanıcı ve Kimlik Doğrulama (Auth Service)**
+- `POST /api/v1/auth/register` (Örnek Body: `{ "email": "...", "password": "..." }`)
+- `POST /api/v1/auth/login` (Örnek Body: `{ "email": "...", "password": "..." }`)
+
+**Ürün Yönetimi (Product Service)**
+- `GET /api/v1/products` (Tüm ürünleri listeler)
+- `POST /api/v1/products` (Yeni ürün ekler: `{ "name": "...", "price": 100, "stock": 50 }`)
+- `DELETE /api/v1/products/:id` (Belirtilen ürünü siler)
+
+**Sipariş Yönetimi (Order Service)**
+- `POST /api/v1/orders` (Sipariş verir: `{ "userId": "...", "products": [...], "total": 150 }`)
+- `PATCH /api/v1/orders/:id/state` (Durumu günceller: `{ "state": "shipped" }` durumlar: `pending`, `shipped`, `delivered`, `canceled`)
+
+---
+
+## 8. Sonuç ve Tartışma
 
 **Başarılar:** Modern bir endüstriyel E-Ticaret altyapısı kurularak; TDD ile "0 hata başlangıç" hedefine ulaşılmış, ağ üzerinde veri tamamen izole edilmiştir. HTTP 200, 201, 400 ve 404 kodlamalarının standartlaştırılmasıyla RMM (Richardson Maturity Model) Seviye 2 hedeflerine fire vermeden ulaşılmıştır.
 
