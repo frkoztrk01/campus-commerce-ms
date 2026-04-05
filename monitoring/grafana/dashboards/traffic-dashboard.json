@@ -1,4 +1,5 @@
 {
+  "uid": "traffic-dashboard",
   "title": "Campus Commerce MS - Traffic Dashboard",
   "tags": ["microservices", "traffic"],
   "timezone": "browser",
