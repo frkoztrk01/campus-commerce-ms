@@ -1,7 +1,7 @@
 # YazLab II - Proje I: Mikroservis Tabanlı E-Ticaret Sistemi
 
 **Ekip Üyeleri:**  
-- Faruk
+- Faruk Öztürk
 - Mücahid Şafak
 
 **Tarih:** 5 Nisan 2026
