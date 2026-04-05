@@ -146,6 +146,7 @@ services:
       GF_USERS_DEFAULT_THEME: dark
     volumes:
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/etc/grafana/dashboards:ro
     networks:
       - internal_net
     depends_on:
