@@ -170,7 +170,11 @@ Sistemin yoğun talep karşısındaki direncini ölçmek ve eş zamanlı istekle
 3. Listeden ürünleri okur (`GET`).
 4. Siparişleri sepete atarak satın alım talebi yaratır (`POST`).
 
-***NOT: Yük testi senaryolarının (50, 100, 200, 500 eş zamanlı istekte ortalama yanıt süreleri) detaylı performans sonuçlarını içeren Locust grafik test ekran görüntülerini bu kısma veya rapora ekleyebilirsiniz.***
+**Yük Testi Kanıt Görselleri:**
+
+*(Performans metriklerine ait Locust test sonucu ekran görüntüsü aşağıda sunulmuştur.)*
+
+![Locust Yük Testi Metrikleri](images/locust-test-sonucu.png)
 
 ---
 
